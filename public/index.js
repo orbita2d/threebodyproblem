@@ -23,6 +23,8 @@ let draw_orbit = false;
 let draw_cm = false;
 let draw_lines = [];
 let draw_equipotential;
+let draw_eqpx;
+let draw_eqpy;
 let mass = 0;
 let invreduced_mass = 0;
 
@@ -63,6 +65,10 @@ function setup() {
   particle.loadLog(field, 1, 1E-4)
 
   draw_equipotential = fxrand() < 0.33;
+  if (!draw_equipotential) {
+    draw_eqpx = fxrand() < 0.2;
+    draw_eqpy = fxrand() < 0.2
+  }
   draw_cm = fxrand() < 0.2;
   draw_orbit = fxrand() < 0.8;
   let lines_select = fxrand() < 0.2;
@@ -90,9 +96,10 @@ function draw() {
   clear()
   background(0);
   time_passed += deltaTime;
+  let phase = 2 * Math.PI * time_passed / period;
   for (let i = 0; i < bodies.length; i++) {
-    bodies[i].origin.x = radius * Math.cos(2 * Math.PI * (time_passed / period + i / bodies.length))
-    bodies[i].origin.y = radius * Math.sin(2 * Math.PI * (time_passed / period + i / bodies.length))
+    bodies[i].origin.x = radius * Math.cos(phase + 2 * Math.PI * i / bodies.length)
+    bodies[i].origin.y = radius * Math.sin(phase + 2 * Math.PI * i / bodies.length)
   }
   let cm = centerOfMass(bodies);
   let origin = toPixels(new Vec2(0, 0));
@@ -100,7 +107,7 @@ function draw() {
 
   //particle.draw(width, height);
   field.pretty(width, height, 16, 16);
-  let n = 5;
+  let n = 3;
   if (draw_equipotential) {
     let equip_origin = cm.times(.5);
     for (let i = 0; i < n; i++) {
@@ -129,6 +136,26 @@ function draw() {
       if (draw_lines[i][j]) {
         line(center.x, center.y, target.x, target.y)
       }
+    }
+  }
+
+  if (draw_eqpx) {
+    for (let i = 1; i <= n; i++) {
+      let x = radius * Math.cos(phase) * i / n;
+      let y = radius * Math.sin(phase) * i / n
+      let v = new Vec2(x, y)
+      strokeWeight(2)
+      field.preciseEquipotential(v.x, v.y, width, height, 1, 1)
+      //field.preciseEquipotential(-x, -y, width, height, 1, 1)
+    }
+  }
+  if (draw_eqpy) {
+    for (let i = 1; i <= n; i++) {
+      let x = 2 * radius * Math.cos(phase + Math.PI / 2) * i / n;
+      let y = 2 * radius * Math.sin(phase + Math.PI / 2) * i / n
+      let v = new Vec2(x, y)
+      strokeWeight(2)
+      field.preciseEquipotential(v.x, v.y, width, height, 1, 1)
     }
   }
 
@@ -300,7 +327,7 @@ class GravityField extends VectorField {
       if (flow.norm() > vmax) {
         flow = flow.times(vmax / flow.norm())
       }
-      let vmin = .15;
+      let vmin = .25;
       if (flow.norm() < vmin) {
         flow = flow.times(vmin / flow.norm())
       }
