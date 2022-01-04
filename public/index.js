@@ -13,6 +13,10 @@ let particle;
  * @type {MassiveBody[]}
  */
 let bodies = [];
+/**
+ * @type {Moon[]}
+ */
+let moons = [];
 
 let radius = 0.35;
 let period = 90000;
@@ -26,10 +30,14 @@ let draw_equipotential;
 let draw_eqpx;
 let draw_eqpy;
 let mass = 0;
-let invreduced_mass = 0;
+let reduced_mass = 0;
+let pixelscale;
 
 function setup() {
+
   const size = 640;
+  const unit_size = 640;
+  pixelscale = size / unit_size;
   createCanvas(size, size);
   background(0);
   loop();
@@ -45,26 +53,46 @@ function setup() {
   } else {
     n = 5;
   }
+  n = 3;
+  let invreduced_mass = 0;
   for (let i = 0; i < n; i++) {
     bodies.push(new MassiveBody(uniform(fxrand(), 0.7, 6), new Vec2(0, 0)));
     mass += bodies[i].mass;
     invreduced_mass += 1 / bodies[i].mass;
   }
+  reduced_mass = 1 / invreduced_mass;
 
   time_passed = fxrand() * 100000;
   uniform(fxrand(), 0.2, 0.6)
   for (let i = 0; i < bodies.length; i++) {
     bodies[i].origin.x = radius * Math.cos(2 * Math.PI * (time_passed / period + i / bodies.length))
     bodies[i].origin.y = radius * Math.sin(2 * Math.PI * (time_passed / period + i / bodies.length))
+    if (fxrand() < 0.5) {
+      let n_moons = 1;
+      let n_moons_select = fxrand();
+      if (n_moons_select < 0.8) {
+        n_moons = 1
+      } else if (n_moons_select < 0.9) {
+        n_moons = 2
+      } else {
+        n_moons = 3
+
+      }
+      let phase_offset = fxrand() * Math.PI * 2;
+      for (let j = 0; j < n_moons; j++) {
+        let moon = new Moon(bodies[i]);
+        moon.phase_offset = 2 * Math.PI * j / n_moons + phase_offset;
+        moons.push(moon)
+      }
+    }
+  }
+  for (let i = 0; i < moons.length; i++) {
+    moons[i].clear();
   }
 
   field = new GravityField(bodies, 16, 16);
 
-  particle = new InertialFlowParticle(new Vec2(0, 0))
-  particle.velocity = new Vec2(0, -4)
-  particle.loadLog(field, 1, 1E-4)
-
-  draw_equipotential = fxrand() < 0.33;
+  draw_equipotential = fxrand() < 0.2;
   if (!draw_equipotential) {
     draw_eqpx = fxrand() < 0.2;
     draw_eqpy = fxrand() < 0.2
@@ -105,7 +133,6 @@ function draw() {
   let origin = toPixels(new Vec2(0, 0));
   let cmpx = toPixels(cm);
 
-  //particle.draw(width, height);
   field.pretty(width, height, 16, 16);
   let n = 3;
   if (draw_equipotential) {
@@ -114,11 +141,13 @@ function draw() {
       field.preciseEquipotential(equip_origin.x + i / n, equip_origin.y, width, height, 1, 1)
     }
   }
-  strokeWeight(2);
+
+
+  strokeWeight(pixelscale * 2);
   stroke(255);
   noFill();
   if (draw_orbit) {
-    circle(normalise(0, -1, 1) * width, normalise(0, -1, 1) * height, radius * width)
+    circle(origin.x, origin.y, radius * width)
   }
 
   for (let i = 0; i < bodies.length; i++) {
@@ -131,7 +160,7 @@ function draw() {
       let target = toPixels(bodies[j].origin);
       if (draw_cross[i][j]) {
         let dist = distVec2(center, target)
-        circle(center.x, center.y, dist)
+        circle(center.x, center.y, 2 * dist)
       }
       if (draw_lines[i][j]) {
         line(center.x, center.y, target.x, target.y)
@@ -140,40 +169,49 @@ function draw() {
   }
 
   if (draw_eqpx) {
+    let n = 3;
+    field.preciseEquipotential(0, 0, width, height, 1, 1)
     for (let i = 1; i <= n; i++) {
-      let x = radius * Math.cos(phase) * i / n;
-      let y = radius * Math.sin(phase) * i / n
+      let x = 0.75 * radius * Math.cos(phase) * i / n;
+      let y = 0.75 * radius * Math.sin(phase) * i / n
       let v = new Vec2(x, y)
-      strokeWeight(2)
+      let vpx = toPixels(v)
+      strokeWeight(pixelscale * 2)
       field.preciseEquipotential(v.x, v.y, width, height, 1, 1)
-      //field.preciseEquipotential(-x, -y, width, height, 1, 1)
+      field.preciseEquipotential(-v.x, -v.y, width, height, 1, 1)
     }
   }
   if (draw_eqpy) {
-    for (let i = 1; i <= n; i++) {
-      let x = 2 * radius * Math.cos(phase + Math.PI / 2) * i / n;
-      let y = 2 * radius * Math.sin(phase + Math.PI / 2) * i / n
+    let n = 3;
+    for (let i = 0; i <= n; i++) {
+      let x = radius * Math.cos(phase) * (1.5 + i / n);
+      let y = radius * Math.sin(phase) * (1.5 + i / n);
       let v = new Vec2(x, y)
-      strokeWeight(2)
+      strokeWeight(pixelscale * 2)
       field.preciseEquipotential(v.x, v.y, width, height, 1, 1)
     }
   }
 
+
+  for (let i = 0; i < moons.length; i++) {
+    let moon = moons[i]
+    moon.phase = 4 * phase;
+    moon.update();
+    moon.draw(width, height)
+  }
+
   if (draw_cm) {
-    strokeWeight(2);
+    strokeWeight(pixelscale * 2);
     stroke(255);
     noFill()
     circle(origin.x, origin.y, 2 * distVec2(cmpx, origin))
     fill(0);
-    circle(cmpx.x, cmpx.y, 10)
+    circle(cmpx.x, cmpx.y, 10 * pixelscale)
   }
 
   for (let i = 0; i < bodies.length; i++) {
     bodies[i].draw(width, height);
   }
-
-  //field.calculate()
-  //particle.update(field, deltaTime / 5000, 1E-4)
 }
 
 function toPixels(v) {
@@ -194,17 +232,84 @@ class MassiveBody {
   }
 
   draw(w, h) {
-    strokeWeight(3);
+    strokeWeight(pixelscale * 3);
     stroke(this.stroke);
     fill(this.fill);
-    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, Math.sqrt(this.mass) * 50)
+    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, Math.sqrt(this.mass) * 50 * pixelscale)
   }
 
   drawRing(w, h) {
-    strokeWeight(2);
+    strokeWeight(pixelscale * 2);
     stroke(this.stroke);
     noFill();
-    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, Math.sqrt(this.mass) * 100)
+    let radius = Math.sqrt(this.mass) / 10 * pixelscale;
+    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, radius * w)
+  }
+}
+
+class Moon {
+  /**
+   * 
+   * @param {MassiveBody} parent 
+   * @param {Vec2} position 
+   */
+  constructor(parent) {
+    this.parent = parent;
+    this.position = new Vec2(0, 0);
+    this.radius = Math.sqrt(parent.mass) / 10;
+    this.phase = 0;
+    this.phase_offset = fxrand() * 2 * Math.PI;
+    this.history = 0;
+    if (fxrand() < 0.05) {
+      this.history = 600;
+    }
+    this.log = [];
+    this.logskip = 2;
+    this.logskipindex = 0;
+    //this.colour = [color(200, 0, 60), color(0)];
+    this.colour = [color(255)];
+    this.fade = color(0);
+    this.circle_size = 6;
+    this.circle_colour = color(0);
+    this.update();
+  }
+  clear() {
+    this.log = [];
+  }
+  update() {
+    this.position.x = this.parent.origin.x + this.radius * Math.cos(this.phase + this.phase_offset);
+    this.position.y = this.parent.origin.y + this.radius * Math.sin(this.phase + this.phase_offset);
+    this.logskipindex++;
+    this.logskipindex %= this.logskip;
+    if (this.logskipindex == 0) {
+      this.log.unshift(this.position.copy())
+      if (this.log.length > this.history) {
+        this.log.pop()
+      }
+    }
+  }
+
+  draw(w, h) {
+    let fade = 8;
+    for (let i = this.log.length - 1; i > 1; i--) {
+      let x1 = normalise(this.log[i - 1].x, -1, 1) * w;
+      let y1 = normalise(this.log[i - 1].y, -1, 1) * h;
+      let x2 = normalise(this.log[i + 0].x, -1, 1) * w;
+      let y2 = normalise(this.log[i + 0].y, -1, 1) * h;
+      let colour = colourmap(this.colour, i / this.log.length);
+      strokeWeight(pixelscale * 1.5);
+      if (i > this.history - fade) {
+        let x = (this.history - i) / fade;
+        strokeWeight(pixelscale * 1.5 * x);
+      }
+      stroke(colour)
+      line(x1, y1, x2, y2)
+    }
+    let px = toPixels(this.position);
+    strokeWeight(pixelscale * 1.5);
+    fill(this.circle_colour);
+    stroke(this.colour[0])
+    circle(px.x, px.y, this.circle_size * pixelscale)
   }
 }
 
@@ -289,7 +394,7 @@ class GravityField extends VectorField {
   pretty(w, h, wt, ht) {
     if (wt == undefined) { wt = 8 };
     if (ht == undefined) { ht = 8 };
-    strokeWeight(this.pretty_stroke_weight);
+    strokeWeight(pixelscale * this.pretty_stroke_weight);
     stroke(this.pretty_stroke);
     for (let x = 0; x < wt; x++) {
       let xr = (x + .5) / wt * 2 - 1;
@@ -327,7 +432,7 @@ class GravityField extends VectorField {
       if (flow.norm() > vmax) {
         flow = flow.times(vmax / flow.norm())
       }
-      let vmin = .25;
+      let vmin = 2;
       if (flow.norm() < vmin) {
         flow = flow.times(vmin / flow.norm())
       }
@@ -342,7 +447,7 @@ class GravityField extends VectorField {
   equipotential(x, y, w, h) {
     let count = 256;
     stroke(color(255, 0, 0));
-    strokeWeight(3);
+    strokeWeight(pixelscale * 3);
 
     let a = 6;
     let b = 6;
@@ -465,7 +570,7 @@ class GravityField extends VectorField {
 class InertialFlowParticle {
   constructor(origin) {
     this.position = origin;
-    this.history = 1000;
+    this.history = 100;
     this.log = [origin];
     this.velocity = new Vec2(0, 0);
     this.colour = [color(240, 0, 60), color(240, 0, 60), color(0, 0, 0)];
@@ -481,11 +586,11 @@ class InertialFlowParticle {
     let n = Math.floor(dt / target) + 1;
     for (let i = 0; i < n; i++) {
       let acceleration = flow.get(this.position.x, this.position.y);
-      let maxg = 2E2;
+      let maxg = 5E2;
       if (acceleration.norm() > maxg) {
         acceleration = acceleration.times(maxg / acceleration.norm());
       }
-      let maxv = 10;
+      let maxv = 1E3;
       this.velocity.increment(acceleration.times(target));
       if (this.velocity.norm() > maxv) {
         this.velocity = this.velocity.times(maxv / this.velocity.norm());
@@ -521,9 +626,9 @@ class InertialFlowParticle {
     let x = normalise(this.position.x, -1, 1) * w;
     let y = normalise(this.position.y, -1, 1) * h;
     let colour = this.colour[0];
-    strokeWeight(0);
+    strokeWeight(pixelscale * 0);
     fill(colour);
-    circle(x, y, this.circle_size)
+    circle(x, y, this.circle_size * pixelscale)
     for (let i = this.log.length - 3; i > 1; i--) {
       let x0 = normalise(this.log[i + 2].x, -1, 1) * w;
       let y0 = normalise(this.log[i + 2].y, -1, 1) * h;
@@ -534,7 +639,7 @@ class InertialFlowParticle {
       let x3 = normalise(this.log[i - 1].x, -1, 1) * w;
       let y3 = normalise(this.log[i - 1].y, -1, 1) * h;
       colour = colourmap(this.colour, i / this.log.length);
-      strokeWeight(4);
+      strokeWeight(pixelscale * 4);
       stroke(colour)
       curve(x0, y0, x1, y1, x2, y2, x3, y3)
     }
@@ -557,7 +662,7 @@ function drawVector(x, y, v, scale) {
   push();
   stroke(255);
   fill(255)
-  strokeWeight(2)
+  strokeWeight(pixelscale * 2)
   line(x, y, x + vec.x, y + vec.y); //draw a line beetween the vertices
   let offset = 5 * vec.norm() / 10;
   var angle = atan2(v.y, v.x); //gets the angle of the line
