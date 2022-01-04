@@ -31,11 +31,11 @@ let draw_eqpx;
 let draw_eqpy;
 let mass = 0;
 let reduced_mass = 0;
+let size = 0;
 let pixelscale;
 
 function setup() {
-
-  const size = 640;
+  size = 640;
   const unit_size = 640;
   pixelscale = size / unit_size;
   createCanvas(size, size);
@@ -53,7 +53,6 @@ function setup() {
   } else {
     n = 5;
   }
-  n = 3;
   let invreduced_mass = 0;
   for (let i = 0; i < n; i++) {
     bodies.push(new MassiveBody(uniform(fxrand(), 0.7, 6), new Vec2(0, 0)));
@@ -211,6 +210,18 @@ function draw() {
 
   for (let i = 0; i < bodies.length; i++) {
     bodies[i].draw(width, height);
+  }
+}
+
+
+function keyPressed() {
+  if (keyCode === DOWN_ARROW) {
+    cnv = createCanvas(size, size, SVG);
+    draw()
+    const element = document.getElementsByTagName("svg")[0];
+    const svg_content = element.outerHTML;
+    saveStrings([svg_content], "threebody", "svg");
+    noLoop();
   }
 }
 
