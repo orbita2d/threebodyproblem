@@ -35,11 +35,14 @@ let size = 0;
 let pixelscale;
 
 function setup() {
-  size = 640;
+  const document_width = document.documentElement.clientWidth - 4;
+  const document_height = document.documentElement.clientHeight - 4;
+  size = Math.min(document_height, document_width);
   const unit_size = 640;
   pixelscale = size / unit_size;
   createCanvas(size, size);
   background(0);
+  document.body.style.background = color(0).toString('#rrggbb');
   loop();
   frameRate(50);
   let n = 0;
