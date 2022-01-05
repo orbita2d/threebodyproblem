@@ -289,7 +289,7 @@ class MassiveBody {
     strokeWeight(pixelscale * 2);
     stroke(this.stroke);
     noFill();
-    let radius = Math.sqrt(this.mass) / 10 * pixelscale;
+    let radius = this.radius * 1.2 * pixelscale;
     circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, radius * w)
   }
 }
@@ -303,7 +303,7 @@ class Moon {
   constructor(parent) {
     this.parent = parent;
     this.position = new Vec2(0, 0);
-    this.radius = Math.sqrt(parent.mass) / 10;
+    this.radius = parent.radius * 1.2;
     this.phase = 0;
     this.phase_offset = fxrand() * 2 * Math.PI;
     this.history = 0;
@@ -388,12 +388,17 @@ class GravityField extends VectorField {
 
     this.pretty_stroke = colourscheme.foreground;
     this.pretty_stroke_weight = 1.4;
-    this.pretty_segments = 4;
-    this.pretty_duty_segments = 3;
-    if (fxrand() < 0.2) {
+    this.pretty_segments = 8;
+    this.pretty_duty_segments = this.pretty_segments * 3 / 4;
+    let segment_select = fxrand();
+    if (segment_select < 0.2) {
       this.pretty_duty_segments = this.pretty_segments;
+    } else if (segment_select < 0.4) {
+      this.pretty_duty_segments = this.pretty_segments * 1 / 2;
+    } else if (segment_select < 0.5) {
+      this.pretty_duty_segments = 1;
     }
-    this.pretty_delta = 0.003;
+    this.pretty_delta = 0.002;
     this.pretty_count = 512;
   }
 
