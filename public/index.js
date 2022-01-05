@@ -53,11 +53,11 @@ function setup() {
 
   let ls_select = fxrand();
   let ls_name = "";
-  if (ls_select < 0.7) {
+  if (ls_select < 0.75) {
     // Long dashes
     linestyle = 0;
     ls_name = "Long dashes"
-  } else if (ls_select < 0.9) {
+  } else if (ls_select < 0.93) {
     // Even dashes
     linestyle = 1;
     ls_name = "Even dashes"
@@ -805,22 +805,33 @@ class RandomVectorScheme extends ColourScheme {
 function getColourScheme() {
   let select = fxrand();
   let scheme;
-  select = 0.74
-  if (select < 0.7) {
+  if (select < 0.65) {
     scheme = new ColourScheme();
-  } else if (select < 0.75) {
+  } else if (select < 0.72) {
     scheme = new RandomVectorScheme()
-  } else if (select < 0.8) {
+  } else if (select < 0.76) {
     scheme = new RandomVectorScheme()
     scheme.background = color(0);
     scheme.vectors = [color(153, 186, 157), color(187, 153, 183), color(236, 200, 201), color(202, 237, 236),]
     scheme.name = "Pastels"
-  } else if (select < 0.85) {
+  } else if (select < 0.81) {
     scheme = new RandomVectorScheme()
     scheme.background = color(0);
     scheme.foreground = color(210, 200, 188)
     scheme.vectors = [color(172, 126, 98), color(186, 154, 136), color(187, 207, 215), color(91, 130, 142),]
     scheme.name = "Beaches"
+  } else if (select < 0.84) {
+    scheme = new RandomVectorScheme()
+    scheme.background = color(0);
+    scheme.foreground = color(214, 194, 188)
+    scheme.vectors = [color(101, 178, 198), color(192, 204, 204), color(213, 114, 118), color(215, 61, 108)]
+    scheme.name = "Candy"
+  } else if (select < 0.86) {
+    scheme = new RandomVectorScheme()
+    scheme.background = color(0, 36, 63);
+    scheme.foreground = color(192, 131, 41)
+    scheme.vectors = [color(182, 121, 41), color(200, 150, 100), color(60, 90, 120), color(163, 172, 177)]
+    scheme.name = "Sol et Luna"
   }
   else {
     scheme = new ColourScheme();
