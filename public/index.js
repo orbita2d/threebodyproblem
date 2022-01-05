@@ -388,12 +388,12 @@ class GravityField extends VectorField {
 
     this.pretty_stroke = colourscheme.foreground;
     this.pretty_stroke_weight = 1.4;
-    this.pretty_segments = 12;
-    this.pretty_duty_segments = 8;
+    this.pretty_segments = 4;
+    this.pretty_duty_segments = 3;
     if (fxrand() < 0.2) {
       this.pretty_duty_segments = this.pretty_segments;
     }
-    this.pretty_delta = 0.001;
+    this.pretty_delta = 0.003;
     this.pretty_count = 512;
   }
 
@@ -482,18 +482,19 @@ class GravityField extends VectorField {
       let lastpx = toPixels(last);
       let r = last.add(flow.times(this.pretty_delta));
       let rpx = toPixels(r);
-      for (let b = 0; b < this.bodies.length; b++) {
-        let body = this.bodies[b];
-        if (distVec2(r, body.origin) < body.radius * .995) {
+      for (let bi = 0; bi < this.bodies.length; bi++) {
+        let body = this.bodies[bi];
+        if (distVec2(r, body.origin) < body.radius) {
           let small_steps = 128;
           r = last;
+          if (i % a >= b) {
+            return;
+          }
           for (let j = 0; j <= small_steps; j++) {
             r = last.add(flow.times(j * this.pretty_delta / small_steps));
-            if (distVec2(r, body.origin) < body.radius * .995) {
+            if (distVec2(r, body.origin) < body.radius) {
               rpx = toPixels(r);
-              if (i % a <= b) {
-                line(lastpx.x, lastpx.y, rpx.x, rpx.y);
-              }
+              line(lastpx.x, lastpx.y, rpx.x, rpx.y);
               return;
             }
           }
