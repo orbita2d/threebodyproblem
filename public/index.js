@@ -33,6 +33,7 @@ let mass = 0;
 let reduced_mass = 0;
 let size = 0;
 let pixelscale;
+let linestyle = 0;
 
 let colourscheme;
 
@@ -44,24 +45,20 @@ function setup() {
   pixelscale = size / unit_size;
   createCanvas(size, size);
 
-  const cs_default = {
-    "background": color(0),
-    "foreground": color(255),
-    "sun_stroke": true,
-  }
-  const cs_inv = {
-    "background": color(255),
-    "foreground": color(0),
-    "sun_stroke": true,
-  }
 
-  let cs_select = fxrand();
-  if (cs_select < 0.8 || true) {
-    colourscheme = cs_default;
+  colourscheme = getColourScheme();
+
+  let ls_select = fxrand();
+  if (ls_select < 0.7) {
+    // Long dashes
+    linestyle = 0;
+  } else if (ls_select < 0.9) {
+    // Even dashes
+    linestyle = 1;
   } else {
-    colourscheme = cs_inv;
+    // Solid lines
+    linestyle = 2;
   }
-  colourscheme.sun_stroke = fxrand() < 0.95;
 
   background(colourscheme.background);
   document.body.style.background = colourscheme.background.toString('#rrggbb');
@@ -271,7 +268,7 @@ class MassiveBody {
     this.fill = color(colourscheme.background);
     this.stroke = colourscheme.foreground;
     this.stroke_weight = 3;
-    this.draw_outline = colourscheme.sun_stroke;
+    this.draw_outline = colourscheme.sunstroke;
   }
 
   draw(w, h) {
@@ -391,13 +388,15 @@ class GravityField extends VectorField {
     this.pretty_stroke_weight = 1.4;
     this.pretty_segments = 8;
     this.pretty_duty_segments = this.pretty_segments * 3 / 4;
-    let segment_select = fxrand();
-    if (segment_select < 0.2) {
-      this.pretty_duty_segments = this.pretty_segments;
-    } else if (segment_select < 0.4) {
-      this.pretty_duty_segments = this.pretty_segments * 1 / 2;
-    } else if (segment_select < 0.5) {
-      this.pretty_duty_segments = this.pretty_segments * 1 / 4;
+    if (linestyle == 0) {
+      this.pretty_segments = 8;
+      this.pretty_duty_segments = 6;
+    } else if (linestyle == 1) {
+      this.pretty_segments = 8;
+      this.pretty_duty_segments = 4;
+    } else if (linestyle == 2) {
+      this.pretty_segments = 4;
+      this.pretty_duty_segments = 4;
     }
     this.pretty_delta = 0.002;
     this.pretty_count = 512;
@@ -739,4 +738,40 @@ function drawVector(x, y, v, scale) {
   rotate(angle + HALF_PI); //rotates the arrow point
   triangle(-offset * 0.5, offset, offset * 0.5, offset, 0, -offset / 2);
   pop();
+}
+
+class ColourScheme {
+  constructor() {
+    this.background = color(0);
+    this.foreground = color(255);
+    this.sunstroke = true;
+  }
+  getVector() {
+    return this.foreground();
+  }
+}
+
+class RandomVectorScheme extends ColourScheme {
+  constructor() {
+    super()
+    this.vectors = [color(255, 0, 0), color(0, 255, 0), color(0, 0, 255)];
+  }
+  getVector() {
+    return sample(fxrand(), this.vectors);
+  }
+}
+
+function getColourScheme() {
+  let select = fxrand();
+  let scheme;
+  return new RandomVectorScheme();
+  if (select < 0.5) {
+    scheme = new ColourScheme();
+  } else {
+    scheme = new ColourScheme();
+    scheme.foreground = color(0);
+    scheme.background = color(255);
+  }
+  scheme.sunstroke = fxrand() < 0.95;
+  return scheme;
 }
