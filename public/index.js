@@ -34,6 +34,8 @@ let reduced_mass = 0;
 let size = 0;
 let pixelscale;
 
+let colourscheme;
+
 function setup() {
   const document_width = document.documentElement.clientWidth - 4;
   const document_height = document.documentElement.clientHeight - 4;
@@ -41,8 +43,28 @@ function setup() {
   const unit_size = 640;
   pixelscale = size / unit_size;
   createCanvas(size, size);
-  background(0);
-  document.body.style.background = color(0).toString('#rrggbb');
+
+  const cs_default = {
+    "background": color(0),
+    "foreground": color(255),
+    "sun_stroke": true,
+  }
+  const cs_inv = {
+    "background": color(255),
+    "foreground": color(0),
+    "sun_stroke": true,
+  }
+
+  let cs_select = fxrand();
+  if (cs_select < 0.8) {
+    colourscheme = cs_default;
+  } else {
+    colourscheme = cs_inv;
+  }
+  colourscheme.sun_stroke = fxrand() < 0.95;
+
+  background(colourscheme.background);
+  document.body.style.background = colourscheme.background.toString('#rrggbb');
   loop();
   frameRate(50);
   let n = 0;
@@ -124,7 +146,7 @@ function setup() {
 
 function draw() {
   clear()
-  background(0);
+  background(colourscheme.background);
   time_passed += deltaTime;
   let phase = 2 * Math.PI * time_passed / period;
   for (let i = 0; i < bodies.length; i++) {
@@ -146,7 +168,7 @@ function draw() {
 
 
   strokeWeight(pixelscale * 2);
-  stroke(255);
+  stroke(colourscheme.foreground);
   noFill();
   if (draw_orbit) {
     circle(origin.x, origin.y, radius * width)
@@ -207,7 +229,7 @@ function draw() {
     stroke(255);
     noFill()
     circle(origin.x, origin.y, 2 * distVec2(cmpx, origin))
-    fill(0);
+    fill(colourscheme.background);
     circle(cmpx.x, cmpx.y, 10 * pixelscale)
   }
 
@@ -241,13 +263,19 @@ class MassiveBody {
   constructor(mass, position) {
     this.origin = position;
     this.mass = mass;
-    this.fill = color(0);
-    this.stroke = color(255);
+    this.fill = color(colourscheme.background);
+    this.stroke = colourscheme.foreground;
+    this.stroke_weight = 3;
+    this.draw_outline = colourscheme.sun_stroke;
   }
 
   draw(w, h) {
-    strokeWeight(pixelscale * 3);
-    stroke(this.stroke);
+    if (this.draw_outline) {
+      strokeWeight(pixelscale * 3);
+      stroke(this.stroke);
+    } else {
+      noStroke();
+    }
     fill(this.fill);
     circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, Math.sqrt(this.mass) * 50 * pixelscale)
   }
@@ -280,11 +308,9 @@ class Moon {
     this.log = [];
     this.logskip = 2;
     this.logskipindex = 0;
-    //this.colour = [color(200, 0, 60), color(0)];
-    this.colour = [color(255)];
-    this.fade = color(0);
+    this.colour = [colourscheme.foreground];
     this.circle_size = 6;
-    this.circle_colour = color(0);
+    this.circle_colour = colourscheme.background;
     this.update();
   }
   clear() {
@@ -304,7 +330,6 @@ class Moon {
   }
 
   draw(w, h) {
-    let fade = 8;
     for (let i = this.log.length - 1; i > 1; i--) {
       let x1 = normalise(this.log[i - 1].x, -1, 1) * w;
       let y1 = normalise(this.log[i - 1].y, -1, 1) * h;
@@ -312,10 +337,6 @@ class Moon {
       let y2 = normalise(this.log[i + 0].y, -1, 1) * h;
       let colour = colourmap(this.colour, i / this.log.length);
       strokeWeight(pixelscale * 1.5);
-      if (i > this.history - fade) {
-        let x = (this.history - i) / fade;
-        strokeWeight(pixelscale * 1.5 * x);
-      }
       stroke(colour)
       line(x1, y1, x2, y2)
     }
@@ -360,7 +381,7 @@ class GravityField extends VectorField {
 
     this.calculate();
 
-    this.pretty_stroke = color(255);
+    this.pretty_stroke = colourscheme.foreground;
     this.pretty_stroke_weight = 1.4;
     this.pretty_segments = 6;
     this.pretty_duty_segments = 4;
