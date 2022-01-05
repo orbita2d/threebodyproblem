@@ -56,7 +56,7 @@ function setup() {
   }
 
   let cs_select = fxrand();
-  if (cs_select < 0.8) {
+  if (cs_select < 0.8 || true) {
     colourscheme = cs_default;
   } else {
     colourscheme = cs_inv;
@@ -118,11 +118,11 @@ function setup() {
 
   draw_equipotential = fxrand() < 0.2;
   if (!draw_equipotential) {
-    draw_eqpx = fxrand() < 0.2;
+    draw_eqpx = n <= 2 ? fxrand() < 0.2 : false;
     draw_eqpy = fxrand() < 0.2
   }
   draw_cm = fxrand() < 0.2;
-  draw_orbit = fxrand() < 0.8;
+  draw_orbit = fxrand() < 0.6;
   let lines_select = true; fxrand() < 0.2;
   for (let i = 0; i < bodies.length; i++) {
     draw_rings[i] = fxrand() < (0.6 / n);
@@ -133,7 +133,7 @@ function setup() {
         draw_cross[i][j] = false;
         draw_lines[i][j] = false;
       } else {
-        draw_cross[i][j] = fxrand() < (0.6 / n);
+        draw_cross[i][j] = false//fxrand() < (0.6 / n);
         if (j > i) {
           draw_lines[i][j] = lines_select;
         } else {
@@ -158,14 +158,6 @@ function draw() {
   let cmpx = toPixels(cm);
 
   field.pretty(width, height, 16, 16);
-  let n = 3;
-  if (draw_equipotential) {
-    let equip_origin = cm.times(.5);
-    for (let i = 0; i < n; i++) {
-      field.preciseEquipotential(equip_origin.x + i / n, equip_origin.y, width, height, 1, 1)
-    }
-  }
-
 
   strokeWeight(pixelscale * 2);
   stroke(colourscheme.foreground);
@@ -196,14 +188,21 @@ function draw() {
     }
   }
 
+  if (draw_equipotential) {
+    let equip_origin = cm.times(-1);
+    let n = 3;
+    for (let i = 1; i <= n; i++) {
+      field.preciseEquipotential(equip_origin.x + i / n, equip_origin.y, width, height, 1, 1)
+    }
+  }
+
   if (draw_eqpx) {
     let n = 3;
     field.preciseEquipotential(0, 0, width, height, 1, 1)
     for (let i = 1; i <= n; i++) {
-      let x = 0.75 * radius * Math.cos(phase) * i / n;
-      let y = 0.75 * radius * Math.sin(phase) * i / n
+      let x = 0.65 * radius * Math.cos(phase) * i / n;
+      let y = 0.65 * radius * Math.sin(phase) * i / n
       let v = new Vec2(x, y)
-      let vpx = toPixels(v)
       strokeWeight(pixelscale * 2)
       field.preciseEquipotential(v.x, v.y, width, height, 1, 1)
       field.preciseEquipotential(-v.x, -v.y, width, height, 1, 1)
@@ -268,6 +267,7 @@ class MassiveBody {
     this.origin = position;
     this.mass = mass;
     this.radius = Math.sqrt(this.mass) / 15;
+    this.ring_radius = Math.sqrt(this.mass) / 10;
     this.fill = color(colourscheme.background);
     this.stroke = colourscheme.foreground;
     this.stroke_weight = 3;
@@ -282,15 +282,16 @@ class MassiveBody {
       noStroke();
     }
     fill(this.fill);
-    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, this.radius * w * pixelscale)
+    // this.radius is in image normalised units. -1 at 0px, 1 at width px
+    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, this.radius * w)
   }
 
   drawRing(w, h) {
     strokeWeight(pixelscale * 2);
     stroke(this.stroke);
     noFill();
-    let radius = this.radius * 1.2 * pixelscale;
-    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, radius * w)
+    let radius = this.ring_radius * w;
+    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, radius)
   }
 }
 
@@ -303,7 +304,7 @@ class Moon {
   constructor(parent) {
     this.parent = parent;
     this.position = new Vec2(0, 0);
-    this.radius = parent.radius * 1.2;
+    this.radius = parent.ring_radius;
     this.phase = 0;
     this.phase_offset = fxrand() * 2 * Math.PI;
     this.history = 0;
