@@ -282,7 +282,6 @@ class MassiveBody {
       noStroke();
     }
     fill(this.fill);
-    noFill()
     circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, this.radius * w * pixelscale)
   }
 
@@ -389,9 +388,12 @@ class GravityField extends VectorField {
 
     this.pretty_stroke = colourscheme.foreground;
     this.pretty_stroke_weight = 1.4;
-    this.pretty_segments = 6;
-    this.pretty_duty_segments = 4;
-    this.pretty_delta = 0.002;
+    this.pretty_segments = 12;
+    this.pretty_duty_segments = 8;
+    if (fxrand() < 0.2) {
+      this.pretty_duty_segments = this.pretty_segments;
+    }
+    this.pretty_delta = 0.001;
     this.pretty_count = 512;
   }
 
@@ -489,10 +491,9 @@ class GravityField extends VectorField {
             r = last.add(flow.times(j * this.pretty_delta / small_steps));
             if (distVec2(r, body.origin) < body.radius * .995) {
               rpx = toPixels(r);
-              line(lastpx.x, lastpx.y, rpx.x, rpx.y);
-              //if (i % a < b) {
-              //line(lastpx.x, lastpx.y, rpx.x, rpx.y);
-              //}
+              if (i % a <= b) {
+                line(lastpx.x, lastpx.y, rpx.x, rpx.y);
+              }
               return;
             }
           }
