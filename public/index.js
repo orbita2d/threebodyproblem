@@ -35,6 +35,9 @@ let size = 0;
 let pixelscale;
 let linestyle = 0;
 
+/**
+ * @type {ColourScheme}
+ */
 let colourscheme;
 
 function setup() {
@@ -49,15 +52,19 @@ function setup() {
   colourscheme = getColourScheme();
 
   let ls_select = fxrand();
+  let ls_name = "";
   if (ls_select < 0.7) {
     // Long dashes
     linestyle = 0;
+    ls_name = "Long dashes"
   } else if (ls_select < 0.9) {
     // Even dashes
     linestyle = 1;
+    ls_name = "Even dashes"
   } else {
     // Solid lines
     linestyle = 2;
+    ls_name = "Solid lines"
   }
 
   background(colourscheme.background);
@@ -115,7 +122,7 @@ function setup() {
 
   draw_equipotential = fxrand() < 0.2;
   if (!draw_equipotential) {
-    draw_eqpx = n <= 2 ? fxrand() < 0.2 : false;
+    draw_eqpx = n == 2 ? fxrand() < 0.2 : false;
     draw_eqpy = fxrand() < 0.2
   }
   draw_cm = fxrand() < 0.2;
@@ -139,6 +146,13 @@ function setup() {
       }
     }
   }
+
+  window.$fxhashFeatures = {
+    "Bodies": n,
+    "Vector Style": ls_name,
+    "Colourscheme": colourscheme.name,
+  }
+  console.log(window.$fxhashFeatures)
 }
 
 function draw() {
@@ -395,8 +409,8 @@ class GravityField extends VectorField {
       this.pretty_segments = 8;
       this.pretty_duty_segments = 4;
     } else if (linestyle == 2) {
-      this.pretty_segments = 4;
-      this.pretty_duty_segments = 4;
+      this.pretty_segments = 1E3;
+      this.pretty_duty_segments = 1E3;
     }
     this.pretty_delta = 0.002;
     this.pretty_count = 512;
@@ -444,34 +458,39 @@ class GravityField extends VectorField {
     if (ht == undefined) { ht = 8 };
     strokeWeight(pixelscale * this.pretty_stroke_weight);
     stroke(this.pretty_stroke);
+    let idx = 0;
     for (let x = 0; x < wt; x++) {
       let xr = (x + .5) / wt * 2 - 1;
       let yr = -1;
-      this.prettyLine(xr, yr, w, h);
+      this.prettyLine(xr, yr, w, h, idx++);
     }
     for (let x = 0; x < wt; x++) {
       let xr = (x + .5) / wt * 2 - 1;
       let yr = 1;
-      this.prettyLine(xr, yr, w, h);
+      this.prettyLine(xr, yr, w, h, idx++);
     }
     for (let x = 0; x < ht; x++) {
       let yr = (x + .5) / wt * 2 - 1;
       let xr = -1;
-      this.prettyLine(xr, yr, w, h);
+      this.prettyLine(xr, yr, w, h, idx++);
     }
     for (let x = 0; x < ht; x++) {
       let yr = (x + .5) / wt * 2 - 1;
       let xr = 1;
-      this.prettyLine(xr, yr, w, h);
+      this.prettyLine(xr, yr, w, h, idx++);
     }
   }
 
-  prettyLine(x, y, w, h) {
+  prettyLine(x, y, w, h, idx) {
     let count = this.pretty_count;
     let a = this.pretty_segments;
     let b = this.pretty_duty_segments;
     let last = new Vec2(x, y);
     for (let i = 0; i < count; i++) {
+      if (i % a == 0) {
+        let segment = Math.floor(i / a);
+        stroke(colourscheme.getVector(idx, segment))
+      }
       let flow = this.get(last.x, last.y);
       if (flow.norm() > 3E2) {
         break;
@@ -745,32 +764,69 @@ class ColourScheme {
     this.background = color(0);
     this.foreground = color(255);
     this.sunstroke = true;
+    this.name = "Nightsky"
   }
-  getVector() {
-    return this.foreground();
+  getVector(idx, segment) {
+    return this.foreground;
+  }
+}
+
+/**
+ * Very quick hashing function.
+ * @param {string} str 
+ */
+function xmur3(str) {
+  for (var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353),
+      h = h << 13 | h >>> 19;
+  return function () {
+    h = Math.imul(h ^ h >>> 16, 2246822507);
+    h = Math.imul(h ^ h >>> 13, 3266489909);
+    return (h ^= h >>> 16) >>> 0;
   }
 }
 
 class RandomVectorScheme extends ColourScheme {
   constructor() {
     super()
-    this.vectors = [color(255, 0, 0), color(0, 255, 0), color(0, 0, 255)];
+    this.background = color(5, 12, 50)
+    this.vectors = [color(185, 128, 106), color(229, 197, 173), color(219, 175, 150)];
+    this.name = "Copper"
   }
-  getVector() {
-    return sample(fxrand(), this.vectors);
+
+  getVector(idx, segment) {
+    let seed = xmur3(idx + "." + segment);
+    var rand = sfc32(seed(), seed(), seed(), seed());
+
+    return sample(rand(), this.vectors);
   }
 }
 
 function getColourScheme() {
   let select = fxrand();
   let scheme;
-  return new RandomVectorScheme();
-  if (select < 0.5) {
+  select = 0.74
+  if (select < 0.7) {
     scheme = new ColourScheme();
-  } else {
+  } else if (select < 0.75) {
+    scheme = new RandomVectorScheme()
+  } else if (select < 0.8) {
+    scheme = new RandomVectorScheme()
+    scheme.background = color(0);
+    scheme.vectors = [color(153, 186, 157), color(187, 153, 183), color(236, 200, 201), color(202, 237, 236),]
+    scheme.name = "Pastels"
+  } else if (select < 0.85) {
+    scheme = new RandomVectorScheme()
+    scheme.background = color(0);
+    scheme.foreground = color(210, 200, 188)
+    scheme.vectors = [color(172, 126, 98), color(186, 154, 136), color(187, 207, 215), color(91, 130, 142),]
+    scheme.name = "Beaches"
+  }
+  else {
     scheme = new ColourScheme();
     scheme.foreground = color(0);
     scheme.background = color(255);
+    scheme.name = "Inverted"
   }
   scheme.sunstroke = fxrand() < 0.95;
   return scheme;
