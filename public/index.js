@@ -123,7 +123,7 @@ function setup() {
   }
   draw_cm = fxrand() < 0.2;
   draw_orbit = fxrand() < 0.8;
-  let lines_select = fxrand() < 0.2;
+  let lines_select = true; fxrand() < 0.2;
   for (let i = 0; i < bodies.length; i++) {
     draw_rings[i] = fxrand() < (0.6 / n);
     draw_cross[i] = [];
@@ -187,7 +187,11 @@ function draw() {
         circle(center.x, center.y, 2 * dist)
       }
       if (draw_lines[i][j]) {
-        line(center.x, center.y, target.x, target.y)
+        let delta = target.sub(center);
+        delta.normalise();
+        let v1 = center.add(delta.times(.5 * width * bodies[i].radius))
+        let v2 = target.add(delta.times(-.5 * width * bodies[j].radius))
+        line(v1.x, v1.y, v2.x, v2.y)
       }
     }
   }
@@ -263,6 +267,7 @@ class MassiveBody {
   constructor(mass, position) {
     this.origin = position;
     this.mass = mass;
+    this.radius = Math.sqrt(this.mass) / 15;
     this.fill = color(colourscheme.background);
     this.stroke = colourscheme.foreground;
     this.stroke_weight = 3;
@@ -277,7 +282,7 @@ class MassiveBody {
       noStroke();
     }
     fill(this.fill);
-    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, Math.sqrt(this.mass) * 50 * pixelscale)
+    circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, this.radius * w * pixelscale)
   }
 
   drawRing(w, h) {
@@ -460,7 +465,7 @@ class GravityField extends VectorField {
     let last = new Vec2(x, y);
     for (let i = 0; i < count; i++) {
       let flow = this.get(last.x, last.y);
-      if (flow.norm() > 3E2) {
+      if (flow.norm() > 2.1E2) {
         break;
       }
       let vmax = 8;
