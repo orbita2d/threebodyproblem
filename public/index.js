@@ -282,6 +282,7 @@ class MassiveBody {
       noStroke();
     }
     fill(this.fill);
+    noFill()
     circle(normalise(this.origin.x, -1, 1) * w, normalise(this.origin.y, -1, 1) * h, this.radius * w * pixelscale)
   }
 
@@ -465,7 +466,7 @@ class GravityField extends VectorField {
     let last = new Vec2(x, y);
     for (let i = 0; i < count; i++) {
       let flow = this.get(last.x, last.y);
-      if (flow.norm() > 2.1E2) {
+      if (flow.norm() > 3E2) {
         break;
       }
       let vmax = 8;
@@ -476,7 +477,27 @@ class GravityField extends VectorField {
       if (flow.norm() < vmin) {
         flow = flow.times(vmin / flow.norm())
       }
+      let lastpx = toPixels(last);
       let r = last.add(flow.times(this.pretty_delta));
+      let rpx = toPixels(r);
+      for (let b = 0; b < this.bodies.length; b++) {
+        let body = this.bodies[b];
+        if (distVec2(r, body.origin) < body.radius * .995) {
+          let small_steps = 128;
+          r = last;
+          for (let j = 0; j <= small_steps; j++) {
+            r = last.add(flow.times(j * this.pretty_delta / small_steps));
+            if (distVec2(r, body.origin) < body.radius * .995) {
+              rpx = toPixels(r);
+              line(lastpx.x, lastpx.y, rpx.x, rpx.y);
+              //if (i % a < b) {
+              //line(lastpx.x, lastpx.y, rpx.x, rpx.y);
+              //}
+              return;
+            }
+          }
+        }
+      }
       if (i % a < b) {
         line((last.x + 1) * w / 2, (last.y + 1) * h / 2, (r.x + 1) * w / 2, (r.y + 1) * h / 2);
       }
