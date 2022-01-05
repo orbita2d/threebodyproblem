@@ -230,7 +230,7 @@ function draw() {
 
   if (draw_cm) {
     strokeWeight(pixelscale * 2);
-    stroke(255);
+    stroke(colourscheme.foreground);
     noFill()
     circle(origin.x, origin.y, 2 * distVec2(cmpx, origin))
     fill(colourscheme.background);
@@ -396,7 +396,7 @@ class GravityField extends VectorField {
     } else if (segment_select < 0.4) {
       this.pretty_duty_segments = this.pretty_segments * 1 / 2;
     } else if (segment_select < 0.5) {
-      this.pretty_duty_segments = 1;
+      this.pretty_duty_segments = this.pretty_segments * 1 / 4;
     }
     this.pretty_delta = 0.002;
     this.pretty_count = 512;
