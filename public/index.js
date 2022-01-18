@@ -250,8 +250,24 @@ function draw() {
   for (let i = 0; i < bodies.length; i++) {
     bodies[i].draw(width, height);
   }
+
+  if (capture) {
+    capturer.capture(canvas);
+    console.log(frameCount - animation_start)
+    if (frameCount >= animation_start + ANIMATION_FRAMES) {
+      console.log('Saving')
+      capture = false;
+      capturer.stop();
+      capturer.save();
+    }
+  }
 }
 
+
+let capture = false;
+let capturer = new CCapture({ format: 'png' });
+let animation_start = 0;
+const ANIMATION_FRAMES = 60;
 
 function keyPressed() {
   if (keyCode === DOWN_ARROW) {
@@ -261,6 +277,16 @@ function keyPressed() {
     const svg_content = element.outerHTML;
     saveStrings([svg_content], "threebody", "svg");
     noLoop();
+  } else if (keyCode === UP_ARROW) {
+    console.log('UP')
+    if (capture) {
+
+    } else {
+      console.log('Starting capture')
+      capture = true;
+      animation_start = frameCount;
+      capturer.start();
+    }
   }
 }
 
@@ -805,28 +831,29 @@ class RandomVectorScheme extends ColourScheme {
 function getColourScheme() {
   let select = fxrand();
   let scheme;
-  if (select < 0.65) {
+  if (select < 0.3) {
     scheme = new ColourScheme();
-  } else if (select < 0.72) {
+  } else if (select < 0.5) {
+    // Copper
     scheme = new RandomVectorScheme()
-  } else if (select < 0.76) {
+  } else if (select < 0.6) {
     scheme = new RandomVectorScheme()
     scheme.background = color(0);
     scheme.vectors = [color(153, 186, 157), color(187, 153, 183), color(236, 200, 201), color(202, 237, 236),]
     scheme.name = "Pastels"
-  } else if (select < 0.81) {
+  } else if (select < 0.7) {
     scheme = new RandomVectorScheme()
     scheme.background = color(0);
     scheme.foreground = color(210, 200, 188)
     scheme.vectors = [color(172, 126, 98), color(186, 154, 136), color(187, 207, 215), color(91, 130, 142),]
     scheme.name = "Beaches"
-  } else if (select < 0.84) {
+  } else if (select < 0.75) {
     scheme = new RandomVectorScheme()
     scheme.background = color(0);
     scheme.foreground = color(214, 194, 188)
     scheme.vectors = [color(101, 178, 198), color(192, 204, 204), color(213, 114, 118), color(215, 61, 108)]
     scheme.name = "Candy"
-  } else if (select < 0.86) {
+  } else if (select < 0.8) {
     scheme = new RandomVectorScheme()
     scheme.background = color(0, 36, 63);
     scheme.foreground = color(192, 131, 41)

@@ -1,7 +1,10 @@
 p5.js
-p5.min.js
+*.min.js
 *.zip
 build.sh
 .vscode/
 build/
 examples/
+package.json
+package-lock.json
+node_modules/
